@@ -35,6 +35,8 @@ import java.util.prefs.Preferences;
         private JPanel loglist;
         private JSpinner spinner1;
         private JTextField textField1;
+        private JTextField textField2;
+        private JTextField textField3;
         private JButton saveButton;
         private JButton reloadButton;
         private JButton reloadNowButton;
@@ -45,8 +47,9 @@ import java.util.prefs.Preferences;
         public static ArrayList<MagMonRec> MagMonList = new ArrayList<>();
         public Integer timeToMagMonUpdate;
         public Integer WebPort;
-        TimerTask timerTask;
-        Timer timer;
+        public String remoteServer, remoteAuth;
+        TimerTask timerTask, sendTimerTask;
+        Timer timer, sendTimer;
         MagMonHttpServer webServer;
         HttpServer server;
 
@@ -107,6 +110,8 @@ import java.util.prefs.Preferences;
             @Override
             public void actionPerformed(ActionEvent e) {
                 MainForm.userPrefs.putInt("WebPort",Integer.valueOf(textField1.getText()));
+                MainForm.userPrefs.put(SendTask.PREF_SERVER_ADDRESS,textField2.getText());
+                MainForm.userPrefs.put(SendTask.PREF_SERVER_AUTH,textField3.getText());
                 MainForm.userPrefs.putInt("TimeToUpdate", ((Integer) spinner1.getValue()));
             }
         });
@@ -151,6 +156,8 @@ import java.util.prefs.Preferences;
         tableColumn.setCellRenderer(new CustomCellRender());
         reloadTimeAndWeb();
         textField1.setText(WebPort.toString());
+        textField2.setText(remoteServer);
+        textField3.setText(remoteAuth);
         SpinnerModel spinnerModel = new SpinnerNumberModel(1,1,44,1);//Model[arr];
         spinner1.setModel(spinnerModel);
         spinnerModel.setValue(timeToMagMonUpdate);
@@ -160,6 +167,8 @@ import java.util.prefs.Preferences;
     public void reloadTimeAndWeb(){
         timeToMagMonUpdate = userPrefs.getInt("TimeToUpdate", 15);
         WebPort = userPrefs.getInt("WebPort", 8765);
+        remoteServer = userPrefs.get(SendTask.PREF_SERVER_ADDRESS,"");
+        remoteAuth = userPrefs.get(SendTask.PREF_SERVER_AUTH,"");
         timerStart();
         WebServerStart();
     }
@@ -170,6 +179,12 @@ import java.util.prefs.Preferences;
         timerTask = new MainTask(textArea1);
         timer = new Timer(true);
         timer.scheduleAtFixedRate(timerTask, 0, timeToMagMonUpdate *60*1000);
+
+        sendTimerTask = null;
+        sendTimer = null;
+        sendTimerTask = new SendTask(textArea1);
+        sendTimer = new Timer(true);
+        sendTimer.scheduleAtFixedRate(sendTimerTask, 0, timeToMagMonUpdate *60*1000);
     }
 
     public void WebServerStart(){

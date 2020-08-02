@@ -19,7 +19,7 @@ public class DatabaseManager {
             Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
             Statement statement = connection.createStatement();
             statement.execute("CREATE TABLE IF NOT EXISTS "+TABLE_NAME+ " " +
-                    "(id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "(_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "name TEXT, "+
                     "hepress TEXT, " +
                     "heprec TEXT, " +
@@ -29,7 +29,8 @@ public class DatabaseManager {
                     "wf2 TEXT, " +
                     "status TEXT, " +
                     "error TEXT, " +
-                    "dateupdate INTEGER )");
+                    "dateupdate INTEGER, " +
+                    "sended INTEGER DEFAULT 0 )");
             connection.close();
         } catch (Exception e) {
             System.out.println("DB ERROR: "+e.getMessage());
