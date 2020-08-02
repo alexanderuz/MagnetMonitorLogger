@@ -26,6 +26,9 @@ public class TrayFrame extends JFrame {
         //обработчик мыши
         MouseListener mouS = new MouseListener() {
             public void mouseClicked(MouseEvent ev) {
+                setVisible(true);
+                setState(JFrame.NORMAL);
+                removeTray();
             }
 
             public void mouseEntered(MouseEvent ev) {
