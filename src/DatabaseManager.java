@@ -5,7 +5,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DatabaseManager {
     private static final String DB_NAME="archdata.db";
-    public static final String TABLE_NAME="log_data";
+    public static final String TABLE_LOGS="log_data";
+    public static final String TABLE_MAIN="main_data";
     private AtomicInteger mOpenCounter = new AtomicInteger();
     private static DatabaseManager instance;
     private Connection mDatabase;
@@ -18,19 +19,17 @@ public class DatabaseManager {
         try {
             Connection connection = DriverManager.getConnection("jdbc:sqlite:" + DB_NAME);
             Statement statement = connection.createStatement();
-            statement.execute("CREATE TABLE IF NOT EXISTS "+TABLE_NAME+ " " +
+            statement.execute("CREATE TABLE IF NOT EXISTS "+TABLE_MAIN+ " " +
                     "(_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                     "name TEXT, "+
-                    "hepress TEXT, " +
-                    "heprec TEXT, " +
-                    "wt1 TEXT, " +
-                    "wt2 TEXT, " +
-                    "wf1 TEXT, " +
-                    "wf2 TEXT, " +
+                    "sended INTEGER DEFAULT 0, "+
+                    "datereaded INTEGER, " +
                     "status TEXT, " +
-                    "error TEXT, " +
-                    "dateupdate INTEGER, " +
-                    "sended INTEGER DEFAULT 0 )");
+                    "errors TEXT, " +
+                    "v1 TEXT, v2 TEXT, v3 TEXT, v4 TEXT, v5 TEXT, v6 TEXT, v7 TEXT, v8 TEXT, v9 TEXT, v10 TEXT, " +
+                    "v11 TEXT, v12 TEXT, v13 TEXT, v14 TEXT, v15 TEXT, v16 TEXT, v17 TEXT, v18 TEXT, v19 TEXT, v20 TEXT, " +
+                    "v21 TEXT, v22 TEXT, v23 TEXT, v24 TEXT, v25 TEXT, v26 TEXT, v27 TEXT, v28 TEXT, v29 TEXT, v30 TEXT, " +
+                    "v31 TEXT, v32 TEXT )");
             connection.close();
         } catch (Exception e) {
             System.out.println("DB ERROR: "+e.getMessage());
@@ -69,14 +68,7 @@ public class DatabaseManager {
 
     public void clearDatabase()
     {
-//        SQLiteDatabase sqLiteDatabase = getInstance().openDatabase();
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Drivers.TABLE_NAME);
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Passengers.TABLE_NAME);
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Points.TABLE_NAME);
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Routes.TABLE_NAME);
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Tickets.TABLE_NAME);
-//        sqLiteDatabase.execSQL("DELETE FROM "+ Trips.TABLE_NAME);
-//        getInstance().closeDatabase();
+        //TODO periodicaly clear old reccords sended to main server
     }
 
 }

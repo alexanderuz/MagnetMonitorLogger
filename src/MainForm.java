@@ -66,7 +66,7 @@ import java.util.prefs.Preferences;
         TabPane1.setForeground(Color.white);
         Font font = new Font("Verdana", Font.BOLD, 18);
         TabPane1.setFont(font);
-        setTitle("Magnet Monitor 3 RemoteViewer v1.0");
+        setTitle("Magnet Monitor 3 Logger v1.1");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         Initialisation();
         refrashTable();

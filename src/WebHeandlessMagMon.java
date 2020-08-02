@@ -3,20 +3,15 @@ import com.gargoylesoftware.htmlunit.WebResponse;
 import com.gargoylesoftware.htmlunit.html.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.Statement;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 public class WebHeandlessMagMon {
 
@@ -52,47 +47,34 @@ public class WebHeandlessMagMon {
         Boolean result = false;
         MagMonRec MagMon = MainForm.MagMonList.get(NumberMagMonList);
         final WebClient webClient = new WebClient();
-        HtmlPage page3 = webClient.getPage("http://"+MagMon.IP+":"+MagMon.Port+"/coldhead.html");
+
+        HtmlPage page3 = webClient.getPage("http://"+MagMon.IP+":"+MagMon.Port+"/cur_a_vals.html");
         HtmlForm form2 = page3.getFormByName("curVal");
 
-        HtmlTextInput textBUF = form2.getInputByName("Ch15");
-        MainForm.MagMonList.get(NumberMagMonList).setHePress(textBUF.getText());
-        String hePress = textBUF.getText();
-        MainForm.MagMonList.get(NumberMagMonList).setStatus("ok");
+        String[] paramsList = new String[32];
+
+        for (int i =0; i< 32; i++)
+        {
+            HtmlTextInput textInput = form2.getInputByName("Ch"+String.valueOf(i+1));
+            String readedValue = textInput.getText();
+            paramsList[i] = readedValue;
+        }
+        long currentTime = System.currentTimeMillis()/1000;
+
         String status = "ok";
-        //LogOut.append(" He getData Pressure = "+textBUF+"\n");
+
         Date date = new Date();
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("HH:mm:ss");
 
-        long currentTime = System.currentTimeMillis()/1000;
-        //System.out.println( " He Pressure = "+textBUF +" "+ formatForDateNow.format(date));
-
+        MainForm.MagMonList.get(NumberMagMonList).setStatus(status);
+        MainForm.MagMonList.get(NumberMagMonList).setHeLevel(paramsList[0]);
+        MainForm.MagMonList.get(NumberMagMonList).setHePress(paramsList[14]);
         MainForm.MagMonList.get(NumberMagMonList).setLastTime(formatForDateNow.format(date));
+        MainForm.MagMonList.get(NumberMagMonList).setWaterFlow1(paramsList[15]);
+        MainForm.MagMonList.get(NumberMagMonList).setWaterTemp1(paramsList[16]);
+        MainForm.MagMonList.get(NumberMagMonList).setWaterFlow2(paramsList[24]);
+        MainForm.MagMonList.get(NumberMagMonList).setWaterTemp2(paramsList[25]);
 
-        textBUF = form2.getInputByName("Ch1");
-        MainForm.MagMonList.get(NumberMagMonList).setHeLevel(textBUF.getText());
-        String heLevel = textBUF.getText();
-
-        page3 = webClient.getPage("http://"+MagMon.IP+":"+MagMon.Port+"/cur_a_vals.html");
-        form2 = page3.getFormByName("curVal");
-
-        textBUF = form2.getInputByName("Ch16");
-        MainForm.MagMonList.get(NumberMagMonList).setWaterFlow1(textBUF.getText());
-        String wf1 = textBUF.getText();
-
-        textBUF = form2.getInputByName("Ch17");
-        MainForm.MagMonList.get(NumberMagMonList).setWaterTemp1(textBUF.getText());
-        String wt1 = textBUF.getText();
-
-        textBUF = form2.getInputByName("Ch25");
-        MainForm.MagMonList.get(NumberMagMonList).setWaterFlow2(textBUF.getText());
-        String wf2 = textBUF.getText();
-
-        textBUF = form2.getInputByName("Ch26");
-        MainForm.MagMonList.get(NumberMagMonList).setWaterTemp2(textBUF.getText());
-        String wt2 = textBUF.getText();
-
-        //LogOut.append(" Ch26 = "+textBUF.getText()+"\n");
         page3 = webClient.getPage("http://"+MagMon.IP+":"+MagMon.Port+"/alarms.html");
         WebResponse response = page3.getWebResponse();
         String content = response.getContentAsString();
@@ -116,10 +98,23 @@ public class WebHeandlessMagMon {
             Connection connection = DatabaseManager.getInstance().openDatabase();
             Statement statement = connection.createStatement();
             String mMName = MainForm.MagMonList.get(NumberMagMonList).getName();
-            statement.executeUpdate("INSERT INTO "+DatabaseManager.TABLE_NAME+
-                    " (name, hepress, heperc, wt1, wt2, wf1, wf2, status, error, dateupdate) VALUES ("
-                    +"\""+mMName+"\", \""+hePress+"\", \""+heLevel+"\", \""+wt1+"\", \""+wt2+"\", \""+wf1+"\", \""+wf2+"\" " +
-                    " \""+status+"\", \""+errors+"\", "+currentTime+")");
+            StringBuilder quotedValues = new StringBuilder();
+
+            for (int i=0; i<32; i++)
+            {
+                if (quotedValues.length() > 0)
+                    quotedValues.append(",");
+                quotedValues.append("\"").append(paramsList[i]).append("\"");
+            }
+            String query = "INSERT INTO "+DatabaseManager.TABLE_MAIN+
+                    " (name, datereaded, status, errors, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25,v26,v27,v28,v29,v30,v31,v32) VALUES ("
+                    +"\""+mMName+"\", \""+currentTime+"\", " +
+                    " \""+status+"\", \""+errors+"\", "+quotedValues.toString()+" )";
+            statement.executeUpdate(query);
+
+
+            //TODO читать раз в сутки страницу конфига и писать ее целиком /cfgSummary.html
+
         } catch (Exception e) {
             System.out.println(e.getMessage());
         } finally {

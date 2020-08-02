@@ -1,9 +1,11 @@
+import com.google.gson.JsonObject;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -41,29 +43,29 @@ public class SendTask extends TimerTask {
                 CloseableHttpClient httpClient = HttpClientBuilder.create().build();
                 try {
                     Statement statement = dbConnection.createStatement();
-                    ResultSet resultSet = statement.executeQuery("SELECT * from " + DatabaseManager.TABLE_NAME + " where sended <> 1 or sended is null");
+                    ResultSet resultSet = statement.executeQuery("SELECT * from " + DatabaseManager.TABLE_MAIN + " where sended <> 1 or sended is null");
                     while (resultSet.next()) {
-                        List<NameValuePair> paramsList = new ArrayList<>();
+                        JsonObject jsonObject = new JsonObject();
                         for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
                             if (!resultSet.getMetaData().getColumnName(i).equals("_id") && !resultSet.getMetaData().getColumnName(i).equals("sended"))
-                                paramsList.add(new BasicNameValuePair(resultSet.getMetaData().getColumnName(i), resultSet.getString(i)));
+                                jsonObject.addProperty(resultSet.getMetaData().getColumnName(i), resultSet.getString(i));
                         }
                         HttpPost httpPost = new HttpPost(serverAddress);
-                        httpPost.setEntity(new UrlEncodedFormEntity(paramsList));
+                        httpPost.setEntity(new StringEntity(jsonObject.toString(), "UTF-8"));
                         if (serverAuth != null && serverAuth.length() > 0)
                             httpPost.addHeader(HttpHeaders.AUTHORIZATION, serverAuth);
 
                         CloseableHttpResponse response = httpClient.execute(httpPost);
                         if (response.getStatusLine().getStatusCode() == 200) {
                             Statement statement2 = dbConnection.createStatement();
-                            statement2.executeUpdate("UPDATE " + DatabaseManager.TABLE_NAME + " SET sended=1 WHERE _id=" + resultSet.getString("_id"));
+                            statement2.executeUpdate("UPDATE " + DatabaseManager.TABLE_MAIN + " SET sended=1 WHERE _id=" + resultSet.getString("_id"));
                             statement2.close();
-                            logOut.append(formatForDateNow.format(new Date()) + " send#" + resultSet.getString("_id") + " is ");
+                            logOut.append(formatForDateNow.format(new Date()) + " send#" + resultSet.getString("_id") + " is ok"+ "\n");
                         } else
-                            logOut.append(formatForDateNow.format(new Date()) + " send#" + resultSet.getString("_id") + " ERROR. Status code:" + response.getStatusLine().getStatusCode() + " Sever response:" + response.getEntity().toString());
+                            logOut.append(formatForDateNow.format(new Date()) + " send#" + resultSet.getString("_id") + " ERROR. Status code:" + response.getStatusLine().getStatusCode() + " Sever response:" + response.getEntity().toString()+ "\n");
                     }
                 } catch (Exception e) {
-                    logOut.append(formatForDateNow.format(new Date()) + " send ERROR:" + e.getMessage());
+                    logOut.append(formatForDateNow.format(new Date()) + " send ERROR:" + e.getMessage()+ "\n");
                     System.out.println(e.getMessage());
                 } finally {
                     if (DatabaseManager.getInstance() != null)
