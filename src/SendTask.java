@@ -35,7 +35,7 @@ public class SendTask extends TimerTask {
             SimpleDateFormat formatForDateNow = new SimpleDateFormat();
             Date currentDate = new Date();
             String serverAddress = MainForm.userPrefs.get(PREF_SERVER_ADDRESS, "");
-            String serverAuth = MainForm.userPrefs.get(PREF_SERVER_ADDRESS, "");
+            String serverAuth = MainForm.userPrefs.get(PREF_SERVER_AUTH, "");
             if (serverAddress != null && serverAddress.length() > 0) {
                 Connection dbConnection = DatabaseManager.getInstance().openDatabase();
                 CloseableHttpClient httpClient = HttpClientBuilder.create().build();
