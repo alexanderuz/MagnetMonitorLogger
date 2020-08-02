@@ -154,6 +154,7 @@ import java.util.prefs.Preferences;
         SpinnerModel spinnerModel = new SpinnerNumberModel(1,1,44,1);//Model[arr];
         spinner1.setModel(spinnerModel);
         spinnerModel.setValue(timeToMagMonUpdate);
+        DatabaseManager.initializeInstance();
     };
 
     public void reloadTimeAndWeb(){

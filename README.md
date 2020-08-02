@@ -1,4 +1,4 @@
-![](https://github.com/id-05/MagnetMonitorRemoteViewerServer/blob/master/images/preview.jpg)
+![](https://github.com/alexanderuz/MagnetMonitorRemoteViewerServer/raw/master/images/preview.jpg)
 
 
 
@@ -13,6 +13,7 @@
 - Ведёт лог опроса оборудования;
 - Позволяет просматривать ошибки на устройстве;
 - Предоставляет собственный Web-интерфейс для удаленного контроля;
+- Сохраняет полученные данные в базу данных SQLite
 
 
 ### Как пользоваться
@@ -32,4 +33,4 @@
 - Антивирусы и защитник Windows могут блокировать сетевые функции программы, рекомендуется запускать программу с правами администратора;
 
 
-# [Скачать Magnet Monitor Remote Viewer](https://github.com/id-05/MagnetMonitorRemoteViewerServer/raw/master/out/artifacts/MagMon_jar/MagMon.jar)
+# [Скачать Magnet Monitor Remote Viewer](https://github.com/alexanderuz/MagnetMonitorRemoteViewerServer/blob/master/out/artifacts/MagMon_jar/MagMon.jar)
