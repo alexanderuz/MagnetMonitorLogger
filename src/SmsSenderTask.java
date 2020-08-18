@@ -1,3 +1,6 @@
+import org.smslib.OutboundMessage;
+import org.smslib.Service;
+import org.smslib.modem.SerialModemGateway;
 import uz.alexander.utils.Logger;
 import uz.alexander.utils.ThreadUtils;
 
@@ -70,7 +73,55 @@ public class SmsSenderTask extends TimerTask {
 
     public static boolean sendSms(String number, String text)
     {
+        SerialModemGateway gateway = null;
+        try {
+            String portName = MainForm.userPrefs.get(Constants.PREF_MODEM_PORT, "");
+            int bitrate = MainForm.userPrefs.getInt(Constants.PREF_MODEM_SPEED, 115200);
 
+            gateway = new SerialModemGateway("model.com5", portName, bitrate, null, null);
+            gateway.setInbound(true);
+            gateway.setOutbound(true);
+            Service.getInstance().addGateway(gateway);
+            Service.getInstance().startService();
+            System.out.println("Thong tin modem:");
+            System.out.println("Manufacturer: " + gateway.getManufacturer());
+            System.out.println("Model: " + gateway.getModel());
+            System.out.println("Serial No: " + gateway.getSerialNo());
+            System.out.println("SIM IMSI: " + gateway.getImsi());
+            System.out.println("Signal Level: " + gateway.getSignalLevel() + " dBm");
+
+            OutboundMessage message = new OutboundMessage(number, text);
+            Service.getInstance().sendMessage(message);
+            System.out.println("SMS sended. Recipient:"+message.getRecipient()+" Status:"+message.getMessageStatus());
+            logOut.append("SMS sended. Recipient:"+message.getRecipient()+" Status:"+message.getMessageStatus()+"\n");
+            Service.getInstance().stopService();
+            Service.getInstance().removeGateway(gateway);
+            gateway.stopGateway();
+
+            return message.getMessageStatus() == OutboundMessage.MessageStatuses.SENT;
+        } catch (Exception e) {
+            Logger.handleException(e);
+        } finally {
+            try {
+                if (Service.getInstance() != null)
+                    Service.getInstance().stopService();
+            } catch (Exception e) {
+                Logger.handleException(e);
+            }
+            try {
+                if (Service.getInstance() != null && gateway != null)
+                    Service.getInstance().removeGateway(gateway);
+            } catch (Exception e) {
+                Logger.handleException(e);
+            }
+            try {
+                if (gateway != null)
+                    gateway.stopGateway();
+            } catch (Exception e) {
+                Logger.handleException(e);
+            }
+
+        }
         return false;
     }
 }

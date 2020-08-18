@@ -15,6 +15,7 @@
 - Предоставляет собственный Web-интерфейс для удаленного контроля;
 - Сохраняет полученные данные в базу данных SQLite
 - Передает все записанные данные на удаленный сервер
+- Отправляет SMS при помощи USB модема при выходе показателей за пределы
 
 
 ### Как пользоваться
@@ -36,5 +37,17 @@
 - Антивирусы и защитник Windows могут блокировать сетевые функции программы, рекомендуется запускать программу с правами администратора;
 - Некоторые экземпляры устройств автоматически выключают доступ к веб-интерфейсу по прошествии определнного времени. Для работы в таком случае необходимо постоянно включать доступ.
 
+### Установка SMSLib
+[Скачать библиотеку можно здесь](https://stackjava.com/wp-content/uploads/2017/11/smslib.zip)
+
+- Скопировать RXTXcomm.jar в папки: %JAVA_HOME%/lib и %JAVA_HOME%/jre/lib/ext
+- Скопировать rxtxParallel.dll и rxtxSerial.dll в папки: %JAVA_HOME%/bin и %JAVA_HOME%/jre/bin
+(Можно заменить RXTXcomm.jar на comm.jar, а также rxtxParallel.dll и rxtxSerial.dll на win32com.dll: но это работает только для 32-битных систем)
+%JAVA_HOME% это каталог где установлен JDK
+- Подробные инструкции можно просмореть внутри архива smslib
+
+These .dll files allow jvm to connect to devices
+
+For example, I install jdk in folder: C:\Program Files\Java\jdk1.8.0_131.
 
 # [Скачать Magnet Monitor Logger](https://github.com/alexanderuz/MagnetMonitorLogger/blob/master/out/artifacts/MagMon_jar/MagMon.jar)
