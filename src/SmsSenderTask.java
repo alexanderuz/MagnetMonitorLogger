@@ -1,3 +1,4 @@
+import org.smslib.Service;
 import uz.alexander.utils.Logger;
 import uz.alexander.utils.ThreadUtils;
 
@@ -6,6 +7,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.TimerTask;
+import com.harshadura.gsm.smsdura.GsmModem;
 
 public class SmsSenderTask extends TimerTask {
 
@@ -70,7 +72,27 @@ public class SmsSenderTask extends TimerTask {
 
     public static boolean sendSms(String number, String text)
     {
+        try {
+            String portName = MainForm.userPrefs.get(Constants.PREF_MODEM_PORT, "");
+            int bitrate = MainForm.userPrefs.getInt(Constants.PREF_MODEM_SPEED, 115200);
+            String modemName = "";
+            String modemPin = "";
+            String smsCenter = MainForm.userPrefs.get(Constants.PREF_MODEM_SMSCEN, "");
+            GsmModem gsmModem = new GsmModem();
+            GsmModem.configModem(portName, bitrate, modemName, modemPin, smsCenter);
+            gsmModem.Sender(number, text);
 
+            return true;
+        } catch (Exception e) {
+            Logger.handleException(e);
+        } finally {
+            try {
+                if (Service.getInstance() != null)
+                    Service.getInstance().stopService();
+            } catch (Exception e) {
+                Logger.handleException(e);
+            }
+        }
         return false;
     }
 }
