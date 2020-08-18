@@ -1,3 +1,5 @@
+import uz.alexander.utils.Logger;
+
 import javax.swing.*;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -22,7 +24,7 @@ public class MainTask extends TimerTask {
         for(int i=0; i<=MainForm.MagMonList.size()-1;i++) {
             try {
                 boolean autoriseOk = WebHeandlessMagMon.autorise(i, LogOut);
-                System.out.println(" Autorise " + autoriseOk);
+                Logger.handleMessage("Autorise", " Autorise " + autoriseOk);
                 MainForm.tableModel.setRowCount(0);
                 if(autoriseOk){
                     WebHeandlessMagMon.getData(i, LogOut);
@@ -42,6 +44,7 @@ public class MainTask extends TimerTask {
                         "; WaterFlow1: "+MainForm.MagMonList.get(i).getWaterFlow1()+
                                     "; WaterTemp2: "+MainForm.MagMonList.get(i).getWaterTemp2()+ "; WaterFlow2:"+MainForm.MagMonList.get(i).getWaterFlow2()+
                                 "; Status: "+MainForm.MagMonList.get(i).getStatus()+ "\n");
+                    MainForm.setDataAcquired();
                 }else{
                     MainForm.tableModel.setRowCount(0);
                     array[i][0] = MainForm.MagMonList.get(i).getName();
@@ -52,7 +55,13 @@ public class MainTask extends TimerTask {
                     MainForm.MagMonList.get(i).setErrors(bufList);
                     LogOut.append(formatForDateNow.format(currentDate)+ ":   Name: "+MainForm.MagMonList.get(i).getName()+ "; Status: No Connect"+ "\n");
                     //e.printStackTrace();
-                    System.out.println("errorrs");
+                    Logger.handleMessage("Error", "Cannot connect to magmon");
+                    if (MainForm.getLastDataAcquiredInterval() > 7200*1000) {//60*60*2 * 1000
+                        if (!"".equals(MainForm.userPrefs.get(Constants.PREF_MODEM_SMSNUMBER,""))){
+                            SmsSenderTask.addToQueue(MainForm.userPrefs.get(Constants.PREF_MODEM_SMSNUMBER,""), "No data for "+Math.round(MainForm.getLastDataAcquiredInterval()/1000D)+" seconds");
+                        }
+                        MainForm.setDataAcquired();
+                    }
                 }
             } catch (IOException e) {
 //                MainForm.tableModel.setRowCount(0);
@@ -65,6 +74,7 @@ public class MainTask extends TimerTask {
 //                LogOut.append(formatForDateNow.format(currentDate)+ ":   Name: "+MainForm.MagMonList.get(i).getName()+ "; Status: No Connect"+ "\n");
 //                //e.printStackTrace();
 //                System.out.println("errorrs");
+                Logger.handleException(e);
             }
         }
             for (Object[] objects : array) MainForm.tableModel.addRow(objects);

@@ -4,6 +4,7 @@ import com.gargoylesoftware.htmlunit.html.*;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import uz.alexander.utils.Logger;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -67,8 +68,8 @@ public class WebHeandlessMagMon {
         SimpleDateFormat formatForDateNow = new SimpleDateFormat("HH:mm:ss");
 
         MainForm.MagMonList.get(NumberMagMonList).setStatus(status);
-        MainForm.MagMonList.get(NumberMagMonList).setHeLevel(paramsList[0]);
-        MainForm.MagMonList.get(NumberMagMonList).setHePress(paramsList[14]);
+        MainForm.MagMonList.get(NumberMagMonList).setHeLevel(paramsList[Constants.HE_LEVEL_INDEX]);
+        MainForm.MagMonList.get(NumberMagMonList).setHePress(paramsList[Constants.HE_PRESSURE_INDEX]);
         MainForm.MagMonList.get(NumberMagMonList).setLastTime(formatForDateNow.format(date));
         MainForm.MagMonList.get(NumberMagMonList).setWaterFlow1(paramsList[15]);
         MainForm.MagMonList.get(NumberMagMonList).setWaterTemp1(paramsList[16]);
@@ -94,6 +95,7 @@ public class WebHeandlessMagMon {
         MainForm.MagMonList.get(NumberMagMonList).setErrors(bufList);
         String errors = String.join("|", bufList);
 
+        //write data to database
         try {
             Connection connection = DatabaseManager.getInstance().openDatabase();
             Statement statement = connection.createStatement();
@@ -116,10 +118,28 @@ public class WebHeandlessMagMon {
             //TODO читать раз в сутки страницу конфига и писать ее целиком /cfgSummary.html
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            Logger.handleException(e);
         } finally {
             if (DatabaseManager.getInstance() != null)
                 DatabaseManager.getInstance().closeDatabase();
+        }
+
+        //send sms if needed
+        if (!"".equals(MainForm.userPrefs.get(Constants.PREF_MODEM_SMSNUMBER,""))) {
+            try {
+                double minlevel = MainForm.userPrefs.getDouble(Constants.PREF_NOTICE_HELEVMIN, 0);
+                double maxlevel = MainForm.userPrefs.getDouble(Constants.PREF_NOTICE_HELEVMAX, 0);
+                double minpress = MainForm.userPrefs.getDouble(Constants.PREF_NOTICE_HEPRESSMIN, 0);
+                double maxpress = MainForm.userPrefs.getDouble(Constants.PREF_NOTICE_HEPRESSMAX, 0);
+
+                if (Double.parseDouble(paramsList[Constants.HE_LEVEL_INDEX]) > maxlevel || Double.parseDouble(paramsList[Constants.HE_LEVEL_INDEX]) < minlevel)
+                    SmsSenderTask.addToQueue(MainForm.userPrefs.get(Constants.PREF_MODEM_SMSNUMBER, ""), "He Level is out of range:" + paramsList[Constants.HE_LEVEL_INDEX]);
+                if (Double.parseDouble(paramsList[Constants.HE_PRESSURE_INDEX]) > maxpress || Double.parseDouble(paramsList[Constants.HE_PRESSURE_INDEX]) < minpress)
+                    SmsSenderTask.addToQueue(MainForm.userPrefs.get(Constants.PREF_MODEM_SMSNUMBER, ""), "Pressure is out of range:" + paramsList[Constants.HE_PRESSURE_INDEX]);
+
+            } catch (Exception e) {
+                Logger.handleException(e);
+            }
         }
         webClient.close();
         return result;

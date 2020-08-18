@@ -41,6 +41,18 @@ import java.util.prefs.Preferences;
         private JButton reloadButton;
         private JButton reloadNowButton;
         private JButton openWebServiceButton;
+        private JTextField modemPortTf;
+        private JTextField modemSpeedTf;
+        private JTextField smsCenterTf;
+        private JTextField smsPhoneTf;
+        private JButton smsSaveButton;
+        private JTextField hePressMinTf;
+        private JTextField heLevMinTf;
+        private JTextField dialUpNameTf;
+        private JCheckBox dialUpConnCb;
+        private JTextField hePressMaxTf;
+        private JTextField heLevMaxTf;
+        private JButton sendTestButton;
         public static Preferences userPrefs;
         public static JsonParser parser = new JsonParser();
         JsonObject buffJson;
@@ -48,10 +60,12 @@ import java.util.prefs.Preferences;
         public Integer timeToMagMonUpdate;
         public Integer WebPort;
         public String remoteServer, remoteAuth;
-        TimerTask timerTask, sendTimerTask;
-        Timer timer, sendTimer;
+        TimerTask timerTask, sendTimerTask, smsSendTask;
+        Timer timer, sendTimer, smsTimer;
         MagMonHttpServer webServer;
         HttpServer server;
+
+        private static long lastDataAcquired = 0;
 
     public  MainForm() throws IOException {
         super();
@@ -109,12 +123,36 @@ import java.util.prefs.Preferences;
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                MainForm.userPrefs.putInt("WebPort",Integer.valueOf(textField1.getText()));
+                MainForm.userPrefs.putInt("WebPort",Integer.parseInt(textField1.getText()));
                 MainForm.userPrefs.put(SendTask.PREF_SERVER_ADDRESS,textField2.getText());
                 MainForm.userPrefs.put(SendTask.PREF_SERVER_AUTH,textField3.getText());
                 MainForm.userPrefs.putInt("TimeToUpdate", ((Integer) spinner1.getValue()));
             }
         });
+
+        sendTestButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                SmsSenderTask.sendSms(smsPhoneTf.getText(), "Test message, Тестовое сообщение");
+            }
+        });
+
+        smsSaveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                MainForm.userPrefs.put(Constants.PREF_MODEM_PORT, modemPortTf.getText());
+                MainForm.userPrefs.putInt(Constants.PREF_MODEM_SPEED, Integer.parseInt(modemSpeedTf.getText()));
+                MainForm.userPrefs.put(Constants.PREF_MODEM_SMSCEN, smsCenterTf.getText());
+                MainForm.userPrefs.put(Constants.PREF_MODEM_SMSNUMBER, smsPhoneTf.getText());
+                MainForm.userPrefs.put(Constants.PREF_MODEM_DIALUPNAME, dialUpNameTf.getText());
+                MainForm.userPrefs.putBoolean(Constants.PREF_MODEM_DIALUPEN, dialUpConnCb.isSelected());
+                MainForm.userPrefs.putDouble(Constants.PREF_NOTICE_HELEVMIN, Double.parseDouble(heLevMinTf.getText()));
+                MainForm.userPrefs.putDouble(Constants.PREF_NOTICE_HELEVMAX, Double.parseDouble(heLevMaxTf.getText()));
+                MainForm.userPrefs.putDouble(Constants.PREF_NOTICE_HEPRESSMIN, Double.parseDouble(hePressMinTf.getText()));
+                MainForm.userPrefs.putDouble(Constants.PREF_NOTICE_HEPRESSMAX, Double.parseDouble(hePressMaxTf.getText()));
+            }
+        });
+
         reloadButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -142,6 +180,7 @@ import java.util.prefs.Preferences;
     }
 
     public void Initialisation(){
+        DatabaseManager.initializeInstance();
         PlainDocument doc = (PlainDocument) textField1.getDocument();
         doc.setDocumentFilter(new DigitFilter());
         String buf = userPrefs.get("JsonMagMonList", "{}");
@@ -158,11 +197,30 @@ import java.util.prefs.Preferences;
         textField1.setText(WebPort.toString());
         textField2.setText(remoteServer);
         textField3.setText(remoteAuth);
+
+        modemPortTf.setText(userPrefs.get(Constants.PREF_MODEM_PORT, "COM10"));
+        modemSpeedTf.setText(Integer.toString(userPrefs.getInt(Constants.PREF_MODEM_SPEED, 115200)));
+        smsCenterTf.setText(userPrefs.get(Constants.PREF_MODEM_SMSCEN, "000"));
+        smsPhoneTf.setText(userPrefs.get(Constants.PREF_MODEM_SMSNUMBER, ""));
+        dialUpNameTf.setText(userPrefs.get(Constants.PREF_MODEM_DIALUPNAME, "Internet"));
+        dialUpConnCb.setSelected(userPrefs.getBoolean(Constants.PREF_MODEM_DIALUPEN,false));
+        hePressMinTf.setText(Double.toString(userPrefs.getDouble(Constants.PREF_NOTICE_HEPRESSMIN,4.100)));
+        hePressMaxTf.setText(Double.toString(userPrefs.getDouble(Constants.PREF_NOTICE_HEPRESSMAX,5.250)));
+        heLevMinTf.setText(Double.toString(userPrefs.getDouble(Constants.PREF_NOTICE_HELEVMIN,4.100)));
+        heLevMaxTf.setText(Double.toString(userPrefs.getDouble(Constants.PREF_NOTICE_HELEVMAX,5.250)));
+
         SpinnerModel spinnerModel = new SpinnerNumberModel(1,1,44,1);//Model[arr];
         spinner1.setModel(spinnerModel);
         spinnerModel.setValue(timeToMagMonUpdate);
-        DatabaseManager.initializeInstance();
+//        lastDataAcquired = System.currentTimeMillis();
     };
+
+    public static void setDataAcquired() {
+        lastDataAcquired = System.currentTimeMillis();
+    }
+    public static long getLastDataAcquiredInterval() {
+        return System.currentTimeMillis() - lastDataAcquired;
+    }
 
     public void reloadTimeAndWeb(){
         timeToMagMonUpdate = userPrefs.getInt("TimeToUpdate", 15);
@@ -185,6 +243,12 @@ import java.util.prefs.Preferences;
         sendTimerTask = new SendTask(textArea1);
         sendTimer = new Timer(true);
         sendTimer.scheduleAtFixedRate(sendTimerTask, 0, timeToMagMonUpdate *60*1000);
+
+        smsSendTask = null;
+        smsTimer = null;
+        smsSendTask = new SmsSenderTask(textArea1);
+        smsTimer = new Timer(true);
+        smsTimer.scheduleAtFixedRate(smsSendTask, 0, timeToMagMonUpdate *60*1000);
     }
 
     public void WebServerStart(){

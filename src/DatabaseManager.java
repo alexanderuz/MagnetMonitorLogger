@@ -1,3 +1,5 @@
+import uz.alexander.utils.Logger;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -7,6 +9,7 @@ public class DatabaseManager {
     private static final String DB_NAME="archdata.db";
     public static final String TABLE_LOGS="log_data";
     public static final String TABLE_MAIN="main_data";
+    public static final String TABLE_SMS="sms_pool";
     private AtomicInteger mOpenCounter = new AtomicInteger();
     private static DatabaseManager instance;
     private Connection mDatabase;
@@ -30,9 +33,16 @@ public class DatabaseManager {
                     "v11 TEXT, v12 TEXT, v13 TEXT, v14 TEXT, v15 TEXT, v16 TEXT, v17 TEXT, v18 TEXT, v19 TEXT, v20 TEXT, " +
                     "v21 TEXT, v22 TEXT, v23 TEXT, v24 TEXT, v25 TEXT, v26 TEXT, v27 TEXT, v28 TEXT, v29 TEXT, v30 TEXT, " +
                     "v31 TEXT, v32 TEXT )");
+            statement.execute("CREATE TABLE IF NOT EXISTS "+TABLE_SMS+ " " +
+                    "(_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "smstext TEXT, "+
+                    "smsnum TEXT, "+
+                    "dateadd INTEGER, " +
+                    "status TEXT, " +
+                    "sended INTEGER DEFAULT 0)");
             connection.close();
         } catch (Exception e) {
-            System.out.println("DB ERROR: "+e.getMessage());
+            Logger.handleException(e);
         }
     }
 
@@ -50,7 +60,7 @@ public class DatabaseManager {
             if (openCounter == 1)
                 mDatabase = DriverManager.getConnection("jdbc:sqlite:"+DB_NAME);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            Logger.handleException(e);
         }
         return mDatabase;
     }
@@ -62,7 +72,7 @@ public class DatabaseManager {
             if (openCounter == 0)
                 mDatabase.close();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            Logger.handleException(e);
         }
     }
 
